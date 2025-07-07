@@ -72,6 +72,10 @@ export default function HomeScreen() {
     setTasks([...tasks, task]);
   };
 
+  const deleteTask = (taskId: string) => {
+    setTasks(tasks.filter(task => task.id !== taskId));
+  };
+
   const incompleteTasks = tasks.filter(task => !task.completed);
 
   return (
@@ -147,13 +151,24 @@ export default function HomeScreen() {
         {/* Tasks List */}
         <View style={styles.tasksContainer}>
           <Text style={styles.sectionTitle}>Today's Tasks</Text>
-          {tasks.map(task => (
-            <TaskCard
-              key={task.id}
-              task={task}
-              onToggle={() => toggleTask(task.id)}
-            />
-          ))}
+          {tasks.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyStateEmoji}>📝</Text>
+              <Text style={styles.emptyStateTitle}>No tasks yet!</Text>
+              <Text style={styles.emptyStateText}>
+                Add your first task or browse the library for inspiration
+              </Text>
+            </View>
+          ) : (
+            tasks.map(task => (
+              <TaskCard
+                key={task.id}
+                task={task}
+                onToggle={() => toggleTask(task.id)}
+                onDelete={() => deleteTask(task.id)}
+              />
+            ))
+          )}
         </View>
       </ScrollView>
 
@@ -278,5 +293,27 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Bold',
     color: '#1F2937',
     marginBottom: 16,
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 40,
+    paddingHorizontal: 20,
+  },
+  emptyStateEmoji: {
+    fontSize: 48,
+    marginBottom: 16,
+  },
+  emptyStateTitle: {
+    fontSize: 18,
+    fontFamily: 'Inter-Bold',
+    color: '#1F2937',
+    marginBottom: 8,
+  },
+  emptyStateText: {
+    fontSize: 14,
+    fontFamily: 'Inter-Medium',
+    color: '#6B7280',
+    textAlign: 'center',
+    lineHeight: 20,
   },
 });

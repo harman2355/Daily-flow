@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Plus, Clock, Target, Heart, Zap, ChevronRight } from 'lucide-react-native';
+import { Plus, Clock, Target, Heart, Zap, ChevronRight, Sparkles } from 'lucide-react-native';
 
 interface DayPlan {
   id: string;
@@ -20,7 +20,12 @@ interface QuickTask {
   category: string;
 }
 
-export default function LibraryScreen() {
+interface LibraryScreenProps {
+  onAddTask?: (task: any) => void;
+  onAddPlan?: (plan: DayPlan) => void;
+}
+
+export default function LibraryScreen({ onAddTask, onAddPlan }: LibraryScreenProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
   const dayPlans: DayPlan[] = [
@@ -132,20 +137,62 @@ export default function LibraryScreen() {
     { id: 'learning', name: 'Learning', emoji: '📚' },
   ];
 
+  const quickActionTemplates = [
+    {
+      title: '15-Min Tasks',
+      emoji: '⚡',
+      tasks: ['📧 Check emails', '🧹 Quick tidy', '💧 Drink water', '🌱 Water plants', '📝 Write note'],
+      color: ['#8B5CF6', '#EC4899']
+    },
+    {
+      title: 'Self-Care',
+      emoji: '💆‍♀️',
+      tasks: ['🧘 5-min meditation', '🛁 Take bath', '📚 Read book', '🎵 Listen music', '🌸 Skincare'],
+      color: ['#10B981', '#06B6D4']
+    }
+  ];
+
   const filteredPlans = selectedCategory === 'all' 
     ? dayPlans 
     : dayPlans.filter(plan => plan.category === selectedCategory);
 
   const handlePlanSelect = (plan: DayPlan) => {
     Alert.alert(
-      `Add "${plan.title}" to Today?`,
-      `This will add ${plan.tasks.length} tasks to your daily plan:\n\n${plan.tasks.join('\n')}`,
+      `Add "${plan.title}" to Today? 🎯`,
+      `This will add ${plan.tasks.length} tasks to your daily plan:\n\n${plan.tasks.join('\n')}\n\nEstimated time: ${plan.duration}`,
       [
         { text: 'Cancel', style: 'cancel' },
         { 
-          text: 'Add to Today', 
+          text: 'Add All Tasks', 
+          style: 'default',
           onPress: () => {
-            Alert.alert('Success! 🎉', `"${plan.title}" has been added to your daily plan.`);
+            // Convert plan tasks to individual tasks
+            plan.tasks.forEach((taskText, index) => {
+              const [emoji, ...titleParts] = taskText.split(' ');
+              const title = titleParts.join(' ');
+              
+              const newTask = {
+                id: `${plan.id}-${index}-${Date.now()}`,
+                title: title,
+                emoji: emoji,
+                priority: index === 0 ? 'high' : 'medium',
+                category: plan.category === 'productivity' ? 'work' : 
+                         plan.category === 'health' ? 'health' : 
+                         plan.category === 'wellness' ? 'personal' : 'other',
+                completed: false,
+                createdAt: new Date(),
+              };
+              
+              if (onAddTask) {
+                onAddTask(newTask);
+              }
+            });
+            
+            Alert.alert(
+              'Success! 🎉', 
+              `"${plan.title}" plan has been added to your daily schedule! ${plan.tasks.length} tasks are ready for you.`,
+              [{ text: 'Let\'s Go!', style: 'default' }]
+            );
           }
         }
       ]
@@ -153,10 +200,59 @@ export default function LibraryScreen() {
   };
 
   const handleTaskAdd = (task: QuickTask) => {
+    const newTask = {
+      id: `quick-${Date.now()}`,
+      title: task.task,
+      emoji: task.emoji,
+      priority: 'medium',
+      category: task.category === 'cleaning' || task.category === 'organizing' ? 'household' : 'other',
+      completed: false,
+      createdAt: new Date(),
+    };
+
+    if (onAddTask) {
+      onAddTask(newTask);
+    }
+
     Alert.alert(
       'Task Added! ✅',
-      `"${task.task}" has been added to your daily plan.`,
-      [{ text: 'Great!', style: 'default' }]
+      `"${task.task}" has been added to your daily plan. Time to get it done! 💪`,
+      [{ text: 'Perfect!', style: 'default' }]
+    );
+  };
+
+  const handleQuickAction = (template: any) => {
+    Alert.alert(
+      `Add ${template.title}? ⚡`,
+      `This will add ${template.tasks.length} quick tasks:\n\n${template.tasks.join('\n')}`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Add Tasks', 
+          onPress: () => {
+            template.tasks.forEach((taskText: string, index: number) => {
+              const [emoji, ...titleParts] = taskText.split(' ');
+              const title = titleParts.join(' ');
+              
+              const newTask = {
+                id: `quick-action-${index}-${Date.now()}`,
+                title: title,
+                emoji: emoji,
+                priority: 'low',
+                category: 'personal',
+                completed: false,
+                createdAt: new Date(),
+              };
+              
+              if (onAddTask) {
+                onAddTask(newTask);
+              }
+            });
+            
+            Alert.alert('Added! 🎉', `${template.title} tasks are now in your daily plan!`);
+          }
+        }
+      ]
     );
   };
 
@@ -190,6 +286,7 @@ export default function LibraryScreen() {
                   selectedCategory === category.id && styles.selectedCategoryChip
                 ]}
                 onPress={() => setSelectedCategory(category.id)}
+                activeOpacity={0.7}
               >
                 <Text style={styles.categoryEmoji}>{category.emoji}</Text>
                 <Text style={[
@@ -232,7 +329,9 @@ export default function LibraryScreen() {
                       <Text style={styles.planDescription}>{plan.description}</Text>
                     </View>
                   </View>
-                  <ChevronRight size={20} color="#FFFFFF" />
+                  <View style={styles.actionIndicator}>
+                    <ChevronRight size={20} color="#FFFFFF" />
+                  </View>
                 </View>
                 
                 <View style={styles.planMeta}>
@@ -257,6 +356,11 @@ export default function LibraryScreen() {
                       +{plan.tasks.length - 3} more tasks
                     </Text>
                   )}
+                </View>
+
+                <View style={styles.tapHint}>
+                  <Sparkles size={12} color="#FFFFFF" />
+                  <Text style={styles.tapHintText}>Tap to add to today</Text>
                 </View>
               </LinearGradient>
             </TouchableOpacity>
@@ -292,27 +396,28 @@ export default function LibraryScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Quick Actions</Text>
           <View style={styles.quickActions}>
-            <TouchableOpacity style={styles.quickAction}>
-              <LinearGradient
-                colors={['#8B5CF6', '#EC4899']}
-                style={styles.quickActionGradient}
+            {quickActionTemplates.map((template, index) => (
+              <TouchableOpacity 
+                key={index}
+                style={styles.quickAction}
+                onPress={() => handleQuickAction(template)}
+                activeOpacity={0.8}
               >
-                <Zap size={24} color="#FFFFFF" />
-                <Text style={styles.quickActionText}>15-Min Tasks</Text>
-                <Text style={styles.quickActionSubtext}>Quick wins</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-            
-            <TouchableOpacity style={styles.quickAction}>
-              <LinearGradient
-                colors={['#10B981', '#06B6D4']}
-                style={styles.quickActionGradient}
-              >
-                <Heart size={24} color="#FFFFFF" />
-                <Text style={styles.quickActionText}>Self-Care</Text>
-                <Text style={styles.quickActionSubtext}>Recharge time</Text>
-              </LinearGradient>
-            </TouchableOpacity>
+                <LinearGradient
+                  colors={template.color}
+                  style={styles.quickActionGradient}
+                >
+                  <Text style={styles.quickActionEmoji}>{template.emoji}</Text>
+                  <Text style={styles.quickActionText}>{template.title}</Text>
+                  <Text style={styles.quickActionSubtext}>
+                    {template.tasks.length} quick tasks
+                  </Text>
+                  <View style={styles.quickActionHint}>
+                    <Plus size={14} color="#FFFFFF" />
+                  </View>
+                </LinearGradient>
+              </TouchableOpacity>
+            ))}
           </View>
         </View>
 
@@ -381,9 +486,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
+    borderWidth: 2,
+    borderColor: 'transparent',
   },
   selectedCategoryChip: {
     backgroundColor: '#8B5CF6',
+    borderColor: '#7C3AED',
   },
   categoryEmoji: {
     fontSize: 16,
@@ -470,6 +578,11 @@ const styles = StyleSheet.create({
     marginTop: 4,
     lineHeight: 18,
   },
+  actionIndicator: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 12,
+    padding: 4,
+  },
   planMeta: {
     flexDirection: 'row',
     gap: 16,
@@ -490,6 +603,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
+    marginBottom: 12,
   },
   previewTaskContainer: {
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
@@ -509,6 +623,22 @@ const styles = StyleSheet.create({
     opacity: 0.8,
     fontStyle: 'italic',
   },
+  tapHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+  },
+  tapHintText: {
+    fontSize: 11,
+    fontFamily: 'Inter-Medium',
+    color: '#FFFFFF',
+    marginLeft: 4,
+    opacity: 0.9,
+  },
   householdGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -526,6 +656,8 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 3,
     position: 'relative',
+    borderWidth: 2,
+    borderColor: 'transparent',
   },
   householdEmoji: {
     fontSize: 28,
@@ -561,19 +693,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 24,
     paddingHorizontal: 16,
+    position: 'relative',
+  },
+  quickActionEmoji: {
+    fontSize: 28,
+    marginBottom: 8,
   },
   quickActionText: {
     fontSize: 16,
     fontFamily: 'Inter-Bold',
     color: '#FFFFFF',
-    marginTop: 8,
+    marginBottom: 4,
   },
   quickActionSubtext: {
     fontSize: 12,
     fontFamily: 'Inter-Medium',
     color: '#FFFFFF',
     opacity: 0.8,
-    marginTop: 4,
+  },
+  quickActionHint: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 8,
+    padding: 4,
   },
   bottomSpacing: {
     height: 40,
