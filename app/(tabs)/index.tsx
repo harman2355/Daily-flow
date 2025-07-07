@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Plus, Sparkles, RotateCcw } from 'lucide-react-native';
 import { TaskCard } from '@/components/TaskCard';
@@ -59,9 +59,27 @@ export default function HomeScreen() {
   }, [tasks]);
 
   const toggleTask = (taskId: string) => {
-    setTasks(tasks.map(task => 
-      task.id === taskId ? { ...task, completed: !task.completed } : task
-    ));
+    setTasks(prevTasks => {
+      const updatedTasks = prevTasks.map(task => 
+        task.id === taskId ? { 
+          ...task, 
+          completed: !task.completed,
+          completedAt: !task.completed ? new Date() : undefined
+        } : task
+      );
+      
+      // Show celebration for task completion
+      const toggledTask = updatedTasks.find(task => task.id === taskId);
+      if (toggledTask?.completed) {
+        Alert.alert(
+          '🎉 Task Completed!',
+          `Great job finishing "${toggledTask.title}"! Keep up the momentum!`,
+          [{ text: 'Awesome!', style: 'default' }]
+        );
+      }
+      
+      return updatedTasks;
+    });
   };
 
   const addTask = (newTask: Omit<Task, 'id'>) => {
@@ -69,14 +87,15 @@ export default function HomeScreen() {
       ...newTask,
       id: Date.now().toString(),
     };
-    setTasks([...tasks, task]);
+    setTasks(prevTasks => [...prevTasks, task]);
   };
 
   const deleteTask = (taskId: string) => {
-    setTasks(tasks.filter(task => task.id !== taskId));
+    setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
   };
 
   const incompleteTasks = tasks.filter(task => !task.completed);
+  const completedTasks = tasks.filter(task => task.completed);
 
   return (
     <LinearGradient
@@ -99,6 +118,7 @@ export default function HomeScreen() {
           <TouchableOpacity
             style={styles.addButton}
             onPress={() => setShowAddModal(true)}
+            activeOpacity={0.8}
           >
             <Plus size={24} color="#FFFFFF" />
           </TouchableOpacity>
@@ -135,6 +155,7 @@ export default function HomeScreen() {
           <TouchableOpacity
             style={styles.spinButton}
             onPress={() => setShowSpinWheel(true)}
+            activeOpacity={0.8}
           >
             <LinearGradient
               colors={['#F59E0B', '#EF4444']}
@@ -158,16 +179,49 @@ export default function HomeScreen() {
               <Text style={styles.emptyStateText}>
                 Add your first task or browse the library for inspiration
               </Text>
+              <TouchableOpacity
+                style={styles.emptyStateButton}
+                onPress={() => setShowAddModal(true)}
+                activeOpacity={0.8}
+              >
+                <LinearGradient
+                  colors={['#8B5CF6', '#EC4899']}
+                  style={styles.emptyStateButtonGradient}
+                >
+                  <Plus size={16} color="#FFFFFF" />
+                  <Text style={styles.emptyStateButtonText}>Add First Task</Text>
+                </LinearGradient>
+              </TouchableOpacity>
             </View>
           ) : (
-            tasks.map(task => (
-              <TaskCard
-                key={task.id}
-                task={task}
-                onToggle={() => toggleTask(task.id)}
-                onDelete={() => deleteTask(task.id)}
-              />
-            ))
+            <>
+              {/* Incomplete Tasks */}
+              {incompleteTasks.map(task => (
+                <TaskCard
+                  key={task.id}
+                  task={task}
+                  onToggle={() => toggleTask(task.id)}
+                  onDelete={() => deleteTask(task.id)}
+                />
+              ))}
+              
+              {/* Completed Tasks */}
+              {completedTasks.length > 0 && (
+                <View style={styles.completedSection}>
+                  <Text style={styles.completedSectionTitle}>
+                    ✅ Completed ({completedTasks.length})
+                  </Text>
+                  {completedTasks.map(task => (
+                    <TaskCard
+                      key={task.id}
+                      task={task}
+                      onToggle={() => toggleTask(task.id)}
+                      onDelete={() => deleteTask(task.id)}
+                    />
+                  ))}
+                </View>
+              )}
+            </>
           )}
         </View>
       </ScrollView>
@@ -315,5 +369,34 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     textAlign: 'center',
     lineHeight: 20,
+    marginBottom: 24,
+  },
+  emptyStateButton: {
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  emptyStateButtonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+  },
+  emptyStateButtonText: {
+    fontSize: 14,
+    fontFamily: 'Inter-Bold',
+    color: '#FFFFFF',
+    marginLeft: 8,
+  },
+  completedSection: {
+    marginTop: 24,
+    paddingTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+  },
+  completedSectionTitle: {
+    fontSize: 16,
+    fontFamily: 'Inter-SemiBold',
+    color: '#6B7280',
+    marginBottom: 12,
   },
 });

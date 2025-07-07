@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, Dimensions, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { X, RefreshCw } from 'lucide-react-native';
 import { Task } from '@/types/Task';
@@ -17,7 +17,10 @@ export function SpinWheel({ visible, onClose, tasks }: SpinWheelProps) {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
   const spinWheel = () => {
-    if (tasks.length === 0) return;
+    if (tasks.length === 0) {
+      Alert.alert('No Tasks! 😅', 'Add some tasks first before spinning the wheel!');
+      return;
+    }
     
     setSpinning(true);
     setSelectedTask(null);
@@ -85,17 +88,18 @@ export function SpinWheel({ visible, onClose, tasks }: SpinWheelProps) {
           )}
 
           <TouchableOpacity
-            style={styles.spinButton}
+            style={[styles.spinButton, (spinning || tasks.length === 0) && styles.disabledButton]}
             onPress={spinWheel}
             disabled={spinning || tasks.length === 0}
+            activeOpacity={0.8}
           >
             <LinearGradient
-              colors={['#8B5CF6', '#EC4899']}
+              colors={tasks.length === 0 ? ['#D1D5DB', '#D1D5DB'] : ['#8B5CF6', '#EC4899']}
               style={styles.spinButtonGradient}
             >
               <RefreshCw size={20} color="#FFFFFF" />
               <Text style={styles.spinButtonText}>
-                {spinning ? 'Spinning...' : 'Spin the Wheel!'}
+                {spinning ? 'Spinning...' : tasks.length === 0 ? 'No Tasks Available' : 'Spin the Wheel!'}
               </Text>
             </LinearGradient>
           </TouchableOpacity>
@@ -227,6 +231,9 @@ const styles = StyleSheet.create({
   spinButton: {
     borderRadius: 16,
     overflow: 'hidden',
+  },
+  disabledButton: {
+    opacity: 0.6,
   },
   spinButtonGradient: {
     flexDirection: 'row',

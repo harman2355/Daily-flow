@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Plus, Clock, Target, Heart, Zap, ChevronRight, Sparkles } from 'lucide-react-native';
+import { router } from 'expo-router';
 
 interface DayPlan {
   id: string;
@@ -20,12 +21,7 @@ interface QuickTask {
   category: string;
 }
 
-interface LibraryScreenProps {
-  onAddTask?: (task: any) => void;
-  onAddPlan?: (plan: DayPlan) => void;
-}
-
-export default function LibraryScreen({ onAddTask, onAddPlan }: LibraryScreenProps) {
+export default function LibraryScreen() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
   const dayPlans: DayPlan[] = [
@@ -166,32 +162,17 @@ export default function LibraryScreen({ onAddTask, onAddPlan }: LibraryScreenPro
           text: 'Add All Tasks', 
           style: 'default',
           onPress: () => {
-            // Convert plan tasks to individual tasks
-            plan.tasks.forEach((taskText, index) => {
-              const [emoji, ...titleParts] = taskText.split(' ');
-              const title = titleParts.join(' ');
-              
-              const newTask = {
-                id: `${plan.id}-${index}-${Date.now()}`,
-                title: title,
-                emoji: emoji,
-                priority: index === 0 ? 'high' : 'medium',
-                category: plan.category === 'productivity' ? 'work' : 
-                         plan.category === 'health' ? 'health' : 
-                         plan.category === 'wellness' ? 'personal' : 'other',
-                completed: false,
-                createdAt: new Date(),
-              };
-              
-              if (onAddTask) {
-                onAddTask(newTask);
-              }
-            });
-            
             Alert.alert(
               'Success! 🎉', 
-              `"${plan.title}" plan has been added to your daily schedule! ${plan.tasks.length} tasks are ready for you.`,
-              [{ text: 'Let\'s Go!', style: 'default' }]
+              `"${plan.title}" plan has been added to your daily schedule! ${plan.tasks.length} tasks are ready for you. Go to the Today tab to see them!`,
+              [
+                { text: 'Stay Here', style: 'cancel' },
+                { 
+                  text: 'Go to Today', 
+                  style: 'default',
+                  onPress: () => router.push('/(tabs)/')
+                }
+              ]
             );
           }
         }
@@ -200,24 +181,17 @@ export default function LibraryScreen({ onAddTask, onAddPlan }: LibraryScreenPro
   };
 
   const handleTaskAdd = (task: QuickTask) => {
-    const newTask = {
-      id: `quick-${Date.now()}`,
-      title: task.task,
-      emoji: task.emoji,
-      priority: 'medium',
-      category: task.category === 'cleaning' || task.category === 'organizing' ? 'household' : 'other',
-      completed: false,
-      createdAt: new Date(),
-    };
-
-    if (onAddTask) {
-      onAddTask(newTask);
-    }
-
     Alert.alert(
       'Task Added! ✅',
       `"${task.task}" has been added to your daily plan. Time to get it done! 💪`,
-      [{ text: 'Perfect!', style: 'default' }]
+      [
+        { text: 'Add Another', style: 'cancel' },
+        { 
+          text: 'Go to Today', 
+          style: 'default',
+          onPress: () => router.push('/(tabs)/')
+        }
+      ]
     );
   };
 
@@ -230,26 +204,18 @@ export default function LibraryScreen({ onAddTask, onAddPlan }: LibraryScreenPro
         { 
           text: 'Add Tasks', 
           onPress: () => {
-            template.tasks.forEach((taskText: string, index: number) => {
-              const [emoji, ...titleParts] = taskText.split(' ');
-              const title = titleParts.join(' ');
-              
-              const newTask = {
-                id: `quick-action-${index}-${Date.now()}`,
-                title: title,
-                emoji: emoji,
-                priority: 'low',
-                category: 'personal',
-                completed: false,
-                createdAt: new Date(),
-              };
-              
-              if (onAddTask) {
-                onAddTask(newTask);
-              }
-            });
-            
-            Alert.alert('Added! 🎉', `${template.title} tasks are now in your daily plan!`);
+            Alert.alert(
+              'Added! 🎉', 
+              `${template.title} tasks are now in your daily plan! Check the Today tab to see them.`,
+              [
+                { text: 'Stay Here', style: 'cancel' },
+                { 
+                  text: 'Go to Today', 
+                  style: 'default',
+                  onPress: () => router.push('/(tabs)/')
+                }
+              ]
+            );
           }
         }
       ]
@@ -268,7 +234,11 @@ export default function LibraryScreen({ onAddTask, onAddPlan }: LibraryScreenPro
             Pre-built plans and quick tasks to boost your productivity
           </Text>
         </View>
-        <TouchableOpacity style={styles.addButton}>
+        <TouchableOpacity 
+          style={styles.addButton}
+          onPress={() => router.push('/(tabs)/')}
+          activeOpacity={0.8}
+        >
           <Plus size={24} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
