@@ -22,7 +22,7 @@ const onboardingData = [
       { emoji: '😵‍💫', text: 'Overwhelm' },
       { emoji: '⏰', text: 'Forgetting' },
       { emoji: '😴', text: 'Procrastination' },
-      { emoji: '🤷‍♂', text: 'Not knowing where to start' },
+      { emoji: '🤷‍♂️', text: 'Not knowing where to start' },
     ]
   },
   {
